@@ -198,18 +198,7 @@ struct ContentView: View {
             
             try startTask.run()
             outText = "Starting Expo development server..."
-            
-            // Read the output to get the web preview URL
-            let startOutput = String(data: startPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)!
-            print(startOutput)
-            
-            // Extract the web preview URL from the output
-            if let range = startOutput.range(of: "http://localhost:[0-9]+") {
-                let previewURL = String(startOutput[range])
-                webViewURL = previewURL
-            }
-            
-            print("All done")
+            openProjectInWebView(startPipe)
         } catch {
             print("Error running command: \(error)")
             outText = "\(error)"
@@ -233,6 +222,32 @@ struct ContentView: View {
             
             // Start the Expo development server for the selected project
             startExpoServer(forProject: projectDir)
+        }
+    }
+    
+    fileprivate func openProjectInWebView(_ startPipe: Pipe) {
+        startPipe.fileHandleForReading.readabilityHandler = { fileHandle in
+            if let output = String(data: fileHandle.availableData, encoding: .utf8), !output.isEmpty {
+                print(output)
+                
+                let pattern = "http://localhost:[0-9]+"
+                
+                if let regex = try? NSRegularExpression(pattern: pattern) {
+                    if let match = regex.firstMatch(in: output, range: NSRange(output.startIndex..., in: output)) {
+                        if let range = Range(match.range, in: output) {
+                            let foundURL = String(output[range])
+                            
+                            webViewURL = foundURL
+                        }
+                    } else {
+                        print("URL not found")
+                    }
+                } else {
+                    print("Invalid regular expression")
+                }
+                
+                print("All done")
+            }
         }
     }
     
@@ -273,17 +288,7 @@ struct ContentView: View {
             try startTask.run()
             outText = "Starting Expo development server..."
             
-            // Read the output to get the web preview URL
-            let startOutput = String(data: startPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)!
-            print(startOutput)
-            
-            // Extract the web preview URL from the output
-            if let range = startOutput.range(of: "http://localhost:[0-9]+") {
-                let previewURL = String(startOutput[range])
-                webViewURL = previewURL
-            }
-            
-            print("All done")
+            openProjectInWebView(startPipe)
         } catch {
             print("Error running command: \(error)")
             outText = "\(error)"
